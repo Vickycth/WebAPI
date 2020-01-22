@@ -100,7 +100,8 @@ namespace TaskEngine
             //     downloadPlaylistInfoTask.Publish(p);
             // });
 
-            // var ts = context.Transcriptions.ToList();
+
+            // var ts = ps.SelectMany(p => p.Medias).SelectMany(m => m.Video.Transcriptions).ToList();
             // ts.ForEach(t =>
             // {
             //     generateVTTFileTask.Publish(t);
@@ -118,7 +119,7 @@ namespace TaskEngine
             //});
 
 
-            localFix();
+            // localFix();
 
             logger.LogDebug("All done!");
 
@@ -132,7 +133,7 @@ namespace TaskEngine
 
         public static void localFix()
         {
-            string path = "/data/cs241_online_sp19";
+            string path = "/data/cs241";
             string[] entries = Directory.GetFileSystemEntries(path, "*.mp4", SearchOption.AllDirectories);
             Console.WriteLine("Got all files");
             using (var _context = CTDbContext.CreateDbContext())
