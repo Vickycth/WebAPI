@@ -85,20 +85,15 @@ namespace TaskEngine.Tasks
             List<Media> newMedia = new List<Media>();
             foreach (JObject jObject in jArray)
             {
-                if (jObject["mediaId"].ToString().Length > 0 && !await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["mediaId"].ToString() && m.SourceType == playlist.SourceType).AnyAsync())
+                if (jObject["mediaId"].ToString().Length > 0 && await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["mediaId"].ToString() && m.SourceType == playlist.SourceType).AnyAsync())
                 {
-                    newMedia.Add(new Media
-                    {
-                        JsonMetadata = jObject,
-                        SourceType = playlist.SourceType,
-                        PlaylistId = playlist.Id,
-                        UniqueMediaIdentifier = jObject["mediaId"].ToString(),
-                        CreatedAt = Convert.ToDateTime(jObject["createdAt"])
-                    });
+                    var m = await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["mediaId"].ToString() && m.SourceType == playlist.SourceType).FirstAsync();
+                    m.JsonMetadata = jObject;
+                    newMedia.Add(m);
                 }
             }
-            await _context.Medias.AddRangeAsync(newMedia);
-            await _context.SaveChangesAsync();
+            // await _context.Medias.AddRangeAsync(newMedia);
+            // await _context.SaveChangesAsync();
             return newMedia;
         }
 
@@ -113,19 +108,15 @@ namespace TaskEngine.Tasks
             List<Media> newMedia = new List<Media>();
             foreach (JObject jObject in jArray)
             {
-                if (!await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["videoId"].ToString() && m.SourceType == playlist.SourceType).AnyAsync())
+                if (await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["videoId"].ToString() && m.SourceType == playlist.SourceType).AnyAsync())
                 {
-                    newMedia.Add(new Media
-                    {
-                        JsonMetadata = jObject,
-                        SourceType = playlist.SourceType,
-                        PlaylistId = playlist.Id,
-                        UniqueMediaIdentifier = jObject["videoId"].ToString()
-                    });
+                    var m = await _context.Medias.Where(m => m.UniqueMediaIdentifier == jObject["videoId"].ToString() && m.SourceType == playlist.SourceType).FirstAsync();
+                    m.JsonMetadata = jObject;
+                    newMedia.Add(m);
                 }
             }
-            await _context.Medias.AddRangeAsync(newMedia);
-            await _context.SaveChangesAsync();
+            // await _context.Medias.AddRangeAsync(newMedia);
+            // await _context.SaveChangesAsync();
             return newMedia;
         }
 

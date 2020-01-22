@@ -75,7 +75,7 @@ namespace TaskEngine
             serviceProvider.GetService<GenerateVTTFileTask>().Consume();
             serviceProvider.GetService<ProcessVideoTask>().Consume();
             serviceProvider.GetService<EPubGeneratorTask>().Consume();
-            RunProgramRunExample(rabbitMQ).GetAwaiter().GetResult();
+            // RunProgramRunExample(rabbitMQ).GetAwaiter().GetResult();
 
 
             DownloadPlaylistInfoTask downloadPlaylistInfoTask = serviceProvider.GetService<DownloadPlaylistInfoTask>();
@@ -86,6 +86,10 @@ namespace TaskEngine
             ProcessVideoTask processVideoTask = serviceProvider.GetService<ProcessVideoTask>();
             EPubGeneratorTask ePubGeneratorTask = serviceProvider.GetService<EPubGeneratorTask>();
             RpcClient rpcClient = serviceProvider.GetService<RpcClient>();
+
+            var p = context.Playlists.Find("85595ac9-4bf7-4430-adfb-a8cd00654046");
+
+            downloadPlaylistInfoTask.Publish(p);
 
             //// downloadPlaylistInfoTask.Publish(new Playlist { Id = "Test", PlaylistIdentifier = "1_jfkhu08c", SourceType = SourceType.Kaltura });
 

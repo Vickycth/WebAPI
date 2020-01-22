@@ -40,53 +40,76 @@ namespace TaskEngine.Tasks
             }
             using (var _context = CTDbContext.CreateDbContext())
             {
-                var latestMedia = await _context.Medias.FindAsync(media.Id);
-                // Don't add video if there are already videos for the given media.
-                if (latestMedia.Video == null)
+                if (video.Video1 != null)
                 {
-                    // Check if Video already exists, if yes link it with this media item.
-                    var file = _context.FileRecords.Where(f => f.Hash == video.Video1.Hash).ToList();
-                    if (file.Count() == 0)
+                    var files = _context.FileRecords.Where(f => f.Hash == video.Video1.Hash).ToList();
+                    foreach(var file in files)
                     {
-                        // Create new video Record
-                        await _context.Videos.AddAsync(video);
-                        await _context.SaveChangesAsync();
-                        latestMedia.VideoId = video.Id;
-                        await _context.SaveChangesAsync();
-                        Console.WriteLine("Downloaded:" + video);
-                        _convertVideoToWavTask.Publish(video);
-                    }
-                    else
-                    {
-                        var existingVideos = await _context.Videos.Where(v => v.Video1Id == file.First().Id).ToListAsync();
-                        // If file exists but video doesn't.
-                        if(existingVideos.Count() == 0)
-                        {
-                            // Delete existing file Record
-                            await file.First().DeleteFileRecordAsync(_context);
-
-                            // Create new video Record
-                            await _context.Videos.AddAsync(video);
-                            await _context.SaveChangesAsync();
-                            latestMedia.VideoId = video.Id;
-                            await _context.SaveChangesAsync();
-                            Console.WriteLine("Downloaded:" + video);
-                            _convertVideoToWavTask.Publish(video);
-                        }
-                        // If video and file both exist.
-                        else
-                        {
-                            
-                            var existingVideo = await _context.Videos.Where(v => v.Video1Id == file.First().Id).FirstAsync();
-                            latestMedia.VideoId = existingVideo.Id;
-                            await _context.SaveChangesAsync();
-                            Console.WriteLine("Existing Video:" + existingVideo);
-
-                            // Deleting downloaded video as it's duplicate.
-                            await video.DeleteVideoAsync(_context);
-                        }
+                        file.FileName = video.Video1.FileName;
+                        file.Path = video.Video1.Path;
                     }
                 }
+
+                if (video.Video2 != null)
+                {
+                    var files = _context.FileRecords.Where(f => f.Hash == video.Video2.Hash).ToList();
+                    foreach (var file in files)
+                    {
+                        file.FileName = video.Video2.FileName;
+                        file.Path = video.Video2.Path;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+
+                //var latestMedia = await _context.Medias.FindAsync(media.Id);
+                //// Don't add video if there are already videos for the given media.
+                //if (latestMedia.Video == null)
+                //{
+                //    // Check if Video already exists, if yes link it with this media item.
+                //    var file = _context.FileRecords.Where(f => f.Hash == video.Video1.Hash).ToList();
+                //    if (file.Count() == 0)
+                //    {
+                //        // Create new video Record
+                //        await _context.Videos.AddAsync(video);
+                //        await _context.SaveChangesAsync();
+                //        latestMedia.VideoId = video.Id;
+                //        await _context.SaveChangesAsync();
+                //        Console.WriteLine("Downloaded:" + video);
+                //        _convertVideoToWavTask.Publish(video);
+                //    }
+                //    else
+                //    {
+                //        var existingVideos = await _context.Videos.Where(v => v.Video1Id == file.First().Id).ToListAsync();
+                //        // If file exists but video doesn't.
+                //        if(existingVideos.Count() == 0)
+                //        {
+                //            // Delete existing file Record
+                //            await file.First().DeleteFileRecordAsync(_context);
+
+                //            // Create new video Record
+                //            await _context.Videos.AddAsync(video);
+                //            await _context.SaveChangesAsync();
+                //            latestMedia.VideoId = video.Id;
+                //            await _context.SaveChangesAsync();
+                //            Console.WriteLine("Downloaded:" + video);
+                //            _convertVideoToWavTask.Publish(video);
+                //        }
+                //        // If video and file both exist.
+                //        else
+                //        {
+                            
+                //            var existingVideo = await _context.Videos.Where(v => v.Video1Id == file.First().Id).FirstAsync();
+                //            latestMedia.VideoId = existingVideo.Id;
+                //            await _context.SaveChangesAsync();
+                //            Console.WriteLine("Existing Video:" + existingVideo);
+
+                //            // Deleting downloaded video as it's duplicate.
+                //            await video.DeleteVideoAsync(_context);
+                //        }
+                //    }
+                //}
             }
         }
 
