@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading;
 using ClassTranscribeDatabase.Models;
 using static ClassTranscribeDatabase.CommonUtils;
+using System.IO;
 
 namespace TaskEngine
 {
@@ -87,9 +88,25 @@ namespace TaskEngine
             EPubGeneratorTask ePubGeneratorTask = serviceProvider.GetService<EPubGeneratorTask>();
             RpcClient rpcClient = serviceProvider.GetService<RpcClient>();
 
-            var p = context.Playlists.Find("85595ac9-4bf7-4430-adfb-a8cd00654046");
+            // var ps = context.Playlists.Where(p => p.SourceType == SourceType.Echo360).ToList();
+            // ps.ForEach(p =>
+            // {
+            //     downloadPlaylistInfoTask.Publish(p);
+            // });
 
-            downloadPlaylistInfoTask.Publish(p);
+            // var ps = context.Playlists.Where(p => p.SourceType == SourceType.Youtube).ToList();
+            // ps.ForEach(p =>
+            // {
+            //     downloadPlaylistInfoTask.Publish(p);
+            // });
+
+            // var ts = context.Transcriptions.ToList();
+            // ts.ForEach(t =>
+            // {
+            //     generateVTTFileTask.Publish(t);
+            // });
+
+
 
             //// downloadPlaylistInfoTask.Publish(new Playlist { Id = "Test", PlaylistIdentifier = "1_jfkhu08c", SourceType = SourceType.Kaltura });
 
@@ -99,6 +116,9 @@ namespace TaskEngine
             //    Language = Languages.ENGLISH,
             //    VideoId = m.VideoId
             //});
+
+
+            localFix();
 
             logger.LogDebug("All done!");
 
@@ -110,6 +130,23 @@ namespace TaskEngine
             };
         }
 
+        public static void localFix()
+        {
+            string path = "/data/cs241_online_sp19";
+            string[] entries = Directory.GetFileSystemEntries(path, "*.mp4", SearchOption.AllDirectories);
+            Console.WriteLine("Got all files");
+            using (var _context = CTDbContext.CreateDbContext())
+            {
+                foreach (string file in entries)
+                {
+                    var fileRecord = new FileRecord(file);
+                    var dbfr = _context.FileRecords.Where(f => f.Hash == fileRecord.Hash).First();
+                    File.Copy(file, dbfr.Path, true);
+                    Console.WriteLine("Fixing" + file);
+                }
+            }
+            Console.WriteLine("hi");
+        }
         private static async Task RunProgramRunExample(RabbitMQConnection rabbitMQ)
         {
             try
