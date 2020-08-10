@@ -11,6 +11,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Nest;
+using Elasticsearch.Net;
+
 namespace ClassTranscribeServer.Controllers
 {
     [Route("api/[controller]")]
@@ -19,10 +22,21 @@ namespace ClassTranscribeServer.Controllers
     {
         private readonly IAuthorizationService _authorizationService;
         private readonly UserUtils _userUtils;
+        private readonly ElasticClient _client;
+
+
         public LogsController(IAuthorizationService authorizationService, CTDbContext context, UserUtils userUtils, ILogger<LogsController> logger) : base(context, logger)
         {
             _authorizationService = authorizationService;
             _userUtils = userUtils;
+
+            // initialize elastic client
+            var node = new Uri("http://localhost:9200");
+            using (var settings = new ConnectionSettings(node))
+            {
+                settings.DefaultIndex("classTranscribe");
+                _client = new ElasticClient(settings);
+            }
         }
 
         // POST: api/Logs
@@ -31,6 +45,9 @@ namespace ClassTranscribeServer.Controllers
         {
             _context.Logs.Add(log);
             await _context.SaveChangesAsync();
+
+            // elastic search indexing
+            await _client.IndexDocumentAsync(log);
 
             return Ok();
         }
@@ -117,6 +134,41 @@ namespace ClassTranscribeServer.Controllers
             if (user != null)
             {
                 return await _context.Logs.Where(u => u.UserId == user.Id).ToListAsync();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets all logs for the logged in user using elastic search.
+        /// </summary>
+        [HttpGet("UserLogsEla")]
+        [Authorize]
+        public async Task<IEnumerable<Log>> GetUserLogsEla()
+        {
+            var user = await _userUtils.GetUser(User);
+            if (user != null)
+            {
+                //return await _context.Logs.Where(u => u.UserId == user.Id).ToListAsync();
+                var searchResponse = await _client.SearchAsync<Log>(s => s
+                        .Query(q => q
+                            .Term(p => p.UserId, user.Id)
+                        )
+                    );
+                return searchResponse.Documents.ToList();
+                //.Query(q => q
+                //  .Bool(b => b
+                //      .Must(mu => mu
+                //          .Match(m => m
+                //              .Field(f => f.UserId == user.Id)
+                //              ), mu => mu
+                //          .Match()
+                //          )
+                //      )
+                //  )
+                //);
             }
             else
             {
@@ -220,6 +272,124 @@ namespace ClassTranscribeServer.Controllers
                     MediaId = l.MediaId,
                     CreatedAt = l.CreatedAt
                 }).ToListAsync();
+
+            IEnumerable<CourseLog> logs;
+            if (start == null)
+            {
+                logs = timeUpdateEvents.GroupBy(x => x.UserId).Select(g => new CourseLog
+                {
+                    User = _context.Users.Where(u => u.Id == g.Key).Select(u => new UserDetails
+                    {
+                        Email = u.Email,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Id = u.Id
+                    }).FirstOrDefault(),
+                    Medias = g.GroupBy(k => k.MediaId).Select(l => new MediaLog
+                    {
+                        MediaId = l.Key,
+                        LastHr = l.Where(m => m.CreatedAt >= DateTime.Now.AddHours(-1)).Count(),
+                        Last3days = l.Where(m => m.CreatedAt >= DateTime.Now.AddDays(-3)).Count(),
+                        LastWeek = l.Where(m => m.CreatedAt >= DateTime.Now.AddDays(-7)).Count(),
+                        LastMonth = l.Count(),
+                    }).ToList()
+                });
+            }
+            else
+            {
+                logs = timeUpdateEvents.GroupBy(x => x.UserId).Select(g => new CourseLog
+                {
+                    User = _context.Users.Where(u => u.Id == g.Key).Select(u => new UserDetails
+                    {
+                        Email = u.Email,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Id = u.Id
+                    }).FirstOrDefault(),
+                    Medias = g.GroupBy(k => k.MediaId).Select(l => new MediaLog
+                    {
+                        MediaId = l.Key,
+                        Count = l.Count(),
+                    }).ToList()
+                });
+            }
+
+            return Ok(logs);
+        }
+
+        /// <summary>
+        /// Gets event count for a particular event type for a particular offeringId using elastic search
+        /// start and end are optional parameters
+        /// Logs returned only if the logged in user is an instructor for the given offeringId
+        /// </summary>
+        [HttpGet("CourseLogsEla")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<CourseLog>>> GetCourseLogsEla(string offeringId, string eventType,
+            DateTime? start = null, DateTime? end = null)
+        {
+            var offering = await _context.Offerings.FindAsync(offeringId);
+            if (offering == null)
+            {
+                return BadRequest();
+            }
+            var authorizationResult = await _authorizationService.AuthorizeAsync(this.User, offering, Globals.POLICY_UPDATE_OFFERING);
+            if (!authorizationResult.Succeeded)
+            {
+                if (User.Identity.IsAuthenticated)
+                {
+                    return new ForbidResult();
+                }
+                else
+                {
+                    return new ChallengeResult();
+                }
+            }
+            DateTime startTime = start ?? DateTime.Now.AddMonths(-1);
+            DateTime endTime = end ?? DateTime.Now;
+
+            //var timeUpdateEvents = await _context.Logs
+            //    .Where(l => l.CreatedAt >= startTime && l.CreatedAt <= endTime && l.OfferingId == offeringId && l.EventType == eventType)
+            //    .Select(l => new
+            //    {
+            //        UserId = l.UserId,
+            //        OfferingId = l.OfferingId,
+            //        MediaId = l.MediaId,
+            //        CreatedAt = l.CreatedAt
+            //    }).ToListAsync();
+
+            var timeUpdateEventsQuery = await _client.SearchAsync<Log>(s => s
+                .Query(q => q
+                    .Bool(b => b
+                        .Must(mu => mu
+                            .Match(m => m
+                                .Field(f => f.OfferingId)
+                                .Query(offeringId)
+                            ), mu => mu
+                            .Match(m => m
+                                .Field(f => f.EventType)
+                                .Query(eventType)
+                            )
+                        )
+                        .Filter(fi => fi
+                             .DateRange(r => r
+                                .Field(f => f.CreatedAt)
+                                .GreaterThanOrEquals(startTime)
+                                .LessThanOrEquals(endTime)
+                            )
+                        )
+                    )
+                )
+            );
+
+            var timeUpdateEvents = timeUpdateEventsQuery.Documents
+                .ToList()
+                .Select(l => new
+                {
+                    UserId = l.UserId,
+                    OfferingId = l.OfferingId,
+                    MediaId = l.MediaId,
+                    CreatedAt = l.CreatedAt
+                }).ToList();
 
             IEnumerable<CourseLog> logs;
             if (start == null)
