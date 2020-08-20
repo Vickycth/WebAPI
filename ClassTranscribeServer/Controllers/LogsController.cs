@@ -24,7 +24,6 @@ namespace ClassTranscribeServer.Controllers
         private readonly UserUtils _userUtils;
         private readonly ElasticClient _client;
 
-
         public LogsController(IAuthorizationService authorizationService, CTDbContext context, UserUtils userUtils, ILogger<LogsController> logger) : base(context, logger)
         {
             _authorizationService = authorizationService;
@@ -34,7 +33,7 @@ namespace ClassTranscribeServer.Controllers
             var node = new Uri("http://localhost:9200");
             using (var settings = new ConnectionSettings(node))
             {
-                settings.DefaultIndex("classTranscribe");
+                //settings.DefaultIndex("classTranscribe");
                 _client = new ElasticClient(settings);
             }
         }
@@ -46,10 +45,80 @@ namespace ClassTranscribeServer.Controllers
             _context.Logs.Add(log);
             await _context.SaveChangesAsync();
 
+            var logEla = new LogEla(log);
+
+            var indexResponse = await _client.IndexAsync(logEla, i => i.Index("logs"));
+            Console.WriteLine(indexResponse.ToString());
+
             // elastic search indexing
-            await _client.IndexDocumentAsync(log);
+            //await _client.IndexDocumentAsync(log);
 
             return Ok();
+        }
+
+        /// <summary>
+        /// Elastic search query test.
+        /// </summary>
+        [HttpGet("TestEla")]
+        [Authorize]
+        public async Task<IEnumerable<Log>> GetTestEla()
+        {
+            var user_id = "8f5b7813-da52-48ff-8b4c-b010c4daa176";
+            var searchResponse = await _client.SearchAsync<LogEla>(s => s
+                .Index("logs")
+                .Query(q => q
+                    .Match(m => m
+                        .Field(f => f.UserId)
+                        .Query(user_id)
+                    )
+                )
+            );
+            return searchResponse.Documents.ToList();
+
+            //return await _context.Logs.Where(u => u.UserId == user_id).ToListAsync();
+
+
+            //string offeringId = "e740770d-e6fb-4ddb-86ca-a49a8dcc7d28";
+            //string eventType = "timeupdate";
+            //DateTime startTime = DateTime.Now.AddMonths(-1);
+            //DateTime endTime = DateTime.Now;
+
+            //var timeUpdateEventsQuery = await _client.SearchAsync<LogEla>(s => s
+            //    .Index("logs")
+            //    .Query(q => q
+            //        .Bool(b => b
+            //            .Must(mu => mu
+            //                .Match(m => m
+            //                    .Field(f => f.OfferingId)
+            //                    .Query(offeringId)
+            //                ), mu => mu
+            //                .Match(m => m
+            //                    .Field(f => f.EventType)
+            //                    .Query(eventType)
+            //                )
+            //            )
+            //            .Filter(fi => fi
+            //                 .DateRange(r => r
+            //                    .Field(f => f.CreatedAt)
+            //                    .GreaterThanOrEquals(startTime)
+            //                    .LessThanOrEquals(endTime)
+            //                )
+            //            )
+            //        )
+            //    )
+            //);
+
+            //var timeUpdateEvents = timeUpdateEventsQuery.Documents
+            //    .ToList()
+            //    .Select(l => new
+            //    {
+            //        UserId = l.UserId,
+            //        OfferingId = l.OfferingId,
+            //        MediaId = l.MediaId,
+            //        CreatedAt = l.CreatedAt
+            //    }).ToList();
+
+            //return timeUpdateEventsQuery.Documents.ToList();
         }
 
         /// <summary>
@@ -131,6 +200,7 @@ namespace ClassTranscribeServer.Controllers
         public async Task<IEnumerable<Log>> GetUserLogs()
         {
             var user = await _userUtils.GetUser(User);
+
             if (user != null)
             {
                 return await _context.Logs.Where(u => u.UserId == user.Id).ToListAsync();
@@ -151,24 +221,16 @@ namespace ClassTranscribeServer.Controllers
             var user = await _userUtils.GetUser(User);
             if (user != null)
             {
-                //return await _context.Logs.Where(u => u.UserId == user.Id).ToListAsync();
-                var searchResponse = await _client.SearchAsync<Log>(s => s
-                        .Query(q => q
-                            .Term(p => p.UserId, user.Id)
+                var searchResponse = await _client.SearchAsync<LogEla>(s => s
+                    .Index("logs")
+                    .Query(q => q
+                        .Match(m => m
+                            .Field(f => f.UserId)
+                            .Query(user.Id)
                         )
-                    );
+                    )
+                );
                 return searchResponse.Documents.ToList();
-                //.Query(q => q
-                //  .Bool(b => b
-                //      .Must(mu => mu
-                //          .Match(m => m
-                //              .Field(f => f.UserId == user.Id)
-                //              ), mu => mu
-                //          .Match()
-                //          )
-                //      )
-                //  )
-                //);
             }
             else
             {
@@ -357,7 +419,7 @@ namespace ClassTranscribeServer.Controllers
             //        CreatedAt = l.CreatedAt
             //    }).ToListAsync();
 
-            var timeUpdateEventsQuery = await _client.SearchAsync<Log>(s => s
+            var timeUpdateEventsQuery = await _client.SearchAsync<LogEla>(s => s
                 .Query(q => q
                     .Bool(b => b
                         .Must(mu => mu

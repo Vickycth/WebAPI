@@ -45,6 +45,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.1" />
     <PackageReference Include="RabbitMQ.Client" Version="6.0.0-pre6" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+    <PackageReference Include="NEST" Version="7.8.2" />
   </ItemGroup>
 
 </Project>

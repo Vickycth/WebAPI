@@ -306,6 +306,20 @@ namespace ClassTranscribeDatabase.Models
         public JObject Json { get; set; }
     }
 
+    public class LogEla : Log
+    {
+        public DateTime CreatedAt { get; set; }
+        public LogEla (Log log)
+        {
+            UserId = log.UserId;
+            OfferingId = log.OfferingId;
+            MediaId = log.MediaId;
+            EventType = log.EventType;
+            Json = log.Json;
+            CreatedAt = DateTime.Now;
+        }
+    }
+
     public class EPub : Entity
     {
         public string Language { get; set; }
