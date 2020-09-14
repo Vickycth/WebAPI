@@ -11,6 +11,9 @@ using CTCommons.Grpc;
 using TaskEngine.Tasks;
 using static ClassTranscribeDatabase.CommonUtils;
 
+using Nest;
+using Microsoft.EntityFrameworkCore;
+
 namespace TaskEngine
 {
     class TempCode
@@ -30,6 +33,8 @@ namespace TaskEngine
         private readonly RpcClient _rpcClient;
         private readonly QueueAwakerTask _queueAwakerTask;
 
+        private readonly ElasticClient _client;
+
         public TempCode(CTDbContext c, CreateBoxTokenTask createBoxTokenTask, UpdateBoxTokenTask updateBoxTokenTask,
             SceneDetectionTask ePubGeneratorTask, ProcessVideoTask processVideoTask, GenerateVTTFileTask generateVTTFileTask,
             TranscriptionTask transcriptionTask, ConvertVideoToWavTask convertVideoToWavTask, DownloadMediaTask downloadMediaTask,
@@ -47,6 +52,13 @@ namespace TaskEngine
             _downloadPlaylistInfoTask = downloadPlaylistInfoTask;
             _queueAwakerTask = queueAwakerTask;
             _rpcClient = rpcClient;
+
+            // initialize elastic client
+            var node = new Uri("http://localhost:9200");
+            using (var settings = new ConnectionSettings(node))
+            {
+                _client = new ElasticClient(settings);
+            }
         }
 
         public void CleanUpInvalidVideos()
@@ -109,6 +121,14 @@ namespace TaskEngine
             // A dummy awaited function call.
             await Task.Delay(0);
             // Add any temporary code
+            var all_logs = await context.Logs.ToListAsync();
+            var all_logs_ela = all_logs.Select(i => new LogEla(i)).ToList();
+            var asyncBulkIndexResponse = await _client.BulkAsync(b => b
+                .Index("logs")
+                .IndexMany(all_logs_ela)
+            );
+
+
         }
 
         private async Task TestYoutubeChannelDownload()

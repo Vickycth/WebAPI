@@ -93,7 +93,7 @@ namespace TaskEngine
             serviceProvider.GetService<UpdateBoxTokenTask>().Consume();
             serviceProvider.GetService<CreateBoxTokenTask>().Consume();
 
-            bool hacktest = false;
+            bool hacktest = true;
             if (hacktest)
             {
                 TempCode tempCode = serviceProvider.GetService<TempCode>();
