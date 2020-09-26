@@ -20,8 +20,8 @@ namespace CTCommons
             var factory = new ConnectionFactory()
             {
                 HostName = Globals.appSettings.RabbitMQServer,
-                UserName = Globals.appSettings.ADMIN_USER_ID,
-                Password = Globals.appSettings.ADMIN_PASSWORD
+                UserName = "guest", //Globals.appSettings.ADMIN_USER_ID,
+                Password = "guest" //Globals.appSettings.ADMIN_PASSWORD
             };
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();

@@ -31,10 +31,14 @@ namespace DevExperiments
                 .AddScoped<SlackLogger>()
                 .AddSingleton<MSTranscriptionService>()
                 .AddSingleton<TempCode>()
+                .AddSingleton<Seeder>()
                 .AddSingleton<RpcClient>()
                 .BuildServiceProvider();
 
             Globals.appSettings = serviceProvider.GetService<IOptions<AppSettings>>().Value;
+
+            Seeder seeder = serviceProvider.GetService<Seeder>();
+            seeder.Seed();
 
             TempCode tempCode = serviceProvider.GetService<TempCode>();
             tempCode.Temp();            
