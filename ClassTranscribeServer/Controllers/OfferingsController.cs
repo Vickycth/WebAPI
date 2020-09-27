@@ -35,12 +35,14 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet("ByStudent")]
         public async Task<ActionResult<IEnumerable<OfferingDTO>>> GetOfferingsByStudent()
         {
+
             // Can't do AsNoTracking here because th next line lazily loads Playlists
             // System.InvalidOperationException: Error generated for warning 'Microsoft.EntityFrameworkCore.Infrastructure.DetachedLazyLoadingWarning': 
             // An attempt was made to lazy-load navigation property 'Playlists' on detached entity of type 'OfferingProxy'. 
             // Lazy-loading is not supported for detached entities or entities that are loaded with 'AsNoTracking()'. 
 
             List<Offering> offerings = await _context.Offerings.ToListAsync();
+            // Store the results
 
 
             // Filter out offerings where there is no media items available.
