@@ -266,7 +266,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool MediaExists(string id)
         {
-            return _context.Medias.Any(e => e.Id == id);
+            return _context.Medias.AsNoTracking().Any(e => e.Id == id);
         }
     }
 }

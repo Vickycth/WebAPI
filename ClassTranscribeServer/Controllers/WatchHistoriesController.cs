@@ -1,4 +1,5 @@
-﻿using ClassTranscribeDatabase;
+﻿
+using ClassTranscribeDatabase;
 using ClassTranscribeDatabase.Models;
 using ClassTranscribeServer.Utils;
 using Microsoft.AspNetCore.Mvc;
@@ -36,7 +37,7 @@ namespace ClassTranscribeServer.Controllers
             var user = await _userUtils.GetUser(User);
             if (user != null)
             {
-                var watchHistory = await _context.WatchHistories
+                var watchHistory = await _context.WatchHistories.AsNoTracking()
                     .Where(w => w.MediaId == mediaId && w.ApplicationUserId == user.Id)
                     .FirstOrDefaultAsync();
 
@@ -60,7 +61,7 @@ namespace ClassTranscribeServer.Controllers
             var user = await _userUtils.GetUser(User);
             if (user != null)
             {
-                var watchedMedias = await _context.WatchHistories
+                var watchedMedias = await _context.WatchHistories.AsNoTracking()
                     .Where(w => w.ApplicationUserId == user.Id)
                     .Select(w => new MediaDTO
                     {
@@ -97,6 +98,7 @@ namespace ClassTranscribeServer.Controllers
             var user = await _userUtils.GetUser(User);
             if (user != null)
             {
+                // Tracking required - we're about to save this
                 var watchHistory = await _context.WatchHistories
                     .Where(w => w.MediaId == mediaId && w.ApplicationUserId == user.Id)
                     .FirstOrDefaultAsync();

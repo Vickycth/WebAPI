@@ -20,7 +20,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<University>>> GetUniversities()
         {
-            return await _context.Universities.OrderBy(u => u.Name).ToListAsync();
+            return await _context.Universities.AsNoTracking().OrderBy(u => u.Name).ToListAsync();
         }
 
         // GET: api/Universities/5
@@ -98,7 +98,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool UniversityExists(string id)
         {
-            return _context.Universities.Any(e => e.Id == id);
+            return _context.Universities.AsNoTracking().Any(e => e.Id == id);
         }
     }
 }

@@ -29,6 +29,7 @@ namespace ClassTranscribeServer.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CourseOfferingDTO>>> GetCourseOfferingsByInstructor(string userId)
         {
+            // Cant do AsNoTracking Here ": An attempt was made to lazy-load navigation property 'Course'"
             var courseOfferings = await _context.UserOfferings
                 .Where(uo => uo.ApplicationUserId == userId && uo.IdentityRole.Name == Globals.ROLE_INSTRUCTOR)
                 .Select(u => u.Offering).SelectMany(u => u.CourseOfferings).ToListAsync();
@@ -104,7 +105,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool CourseOfferingExists(string id)
         {
-            return _context.CourseOfferings.Any(e => e.CourseId == id);
+            return _context.CourseOfferings.AsNoTracking().Any(e => e.CourseId == id);
         }
         public class CourseOfferingDTO
         {

@@ -35,7 +35,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet("ByOfferingId/{offeringId}")]
         public async Task<ActionResult<IEnumerable<UserOffering>>> GetUserOfferingsByOfferingId(string offeringId)
         {
-            return await _context.UserOfferings.Where(uo => uo.OfferingId == offeringId).ToListAsync();
+            return await _context.UserOfferings.AsNoTracking().Where(uo => uo.OfferingId == offeringId).ToListAsync();
         }
 
         // POST: api/UserOfferings
@@ -199,7 +199,7 @@ namespace ClassTranscribeServer.Controllers
             }
 
             IdentityRole identityRole = _context.Roles.Where(r => r.Name == roleName).FirstOrDefault();
-            return await _context.UserOfferings
+            return await _context.UserOfferings.AsNoTracking()
                 .Where(uo => uo.OfferingId == offeringId && uo.IdentityRoleId == identityRole.Id)
                 .Select(uo => uo.ApplicationUser.Email).ToListAsync();
         }
@@ -238,7 +238,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool UserOfferingExists(string id)
         {
-            return _context.UserOfferings.Any(e => e.ApplicationUserId == id);
+            return _context.UserOfferings.AsNoTracking().Any(e => e.ApplicationUserId == id);
         }
 
         public class UserOfferingDTO

@@ -273,7 +273,7 @@ namespace ClassTranscribeServer.Controllers
         [Authorize(Roles = Globals.ROLE_ADMIN + "," + Globals.ROLE_ADVISORS)]
         public async Task<IEnumerable<string>> GetEventTypes()
         {
-            return await _context.Logs.Select(l => l.EventType).Distinct().ToListAsync();
+            return await _context.Logs.AsNoTracking().Select(l => l.EventType).Distinct().ToListAsync();
         }
 
         /// <summary>
@@ -284,7 +284,7 @@ namespace ClassTranscribeServer.Controllers
         [Authorize(Roles = Globals.ROLE_ADMIN + "," + Globals.ROLE_ADVISORS)]
         public async Task<IEnumerable<string>> GetUserIds()
         {
-            return await _context.Users.Select(u => u.Email).Distinct().ToListAsync();
+            return await _context.Users.AsNoTracking().Select(u => u.Email).Distinct().ToListAsync();
         }
 
         public class SearchDTO

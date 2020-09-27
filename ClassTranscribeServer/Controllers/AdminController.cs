@@ -163,6 +163,8 @@ namespace ClassTranscribeServer.Controllers
                 l.EventType,
                 l.Json
             }).ToListAsync();
+
+            // TODO stream the result without saving it to a local file
             var path = CommonUtils.GetTmpFile();
             using (var writer = new StreamWriter(path))
             {

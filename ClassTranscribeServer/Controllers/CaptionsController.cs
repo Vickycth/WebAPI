@@ -36,7 +36,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet]
         public async Task<ActionResult<Caption>> GetCaption(string transcriptionId, int index)
         {
-            var captions = await _context.Captions.Where(c => c.TranscriptionId == transcriptionId && c.Index == index)
+            var captions = await _context.Captions.AsNoTracking().Where(c => c.TranscriptionId == transcriptionId && c.Index == index)
                 .OrderByDescending(c => c.CreatedAt).ToListAsync();
             if (captions == null || captions.Count == 0)
             {
@@ -145,10 +145,10 @@ namespace ClassTranscribeServer.Controllers
         {
 
 
-            var allVideos = await _context.Medias.Where(m => m.Playlist.OfferingId == offeringId)
+            var allVideos = await _context.Medias.AsNoTracking().Where(m => m.Playlist.OfferingId == offeringId)
                 .Select(m => new { m.VideoId, m.Video, MediaId = m.Id, m.PlaylistId, PlaylistName = m.Playlist.Name, MediaName = m.Name }).ToListAsync();
 
-            var captions = await _context.Medias.Where(m => m.Playlist.OfferingId == offeringId)
+            var captions = await _context.Medias.AsNoTracking().Where(m => m.Playlist.OfferingId == offeringId)
                 .Select(m => m.Video).SelectMany(v => v.Transcriptions)
                     .SelectMany(t => t.Captions)
                     .Where(c => EF.Functions.ToTsVector("english", c.Text).Matches(query))
