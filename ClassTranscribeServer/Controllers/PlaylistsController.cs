@@ -49,7 +49,7 @@ namespace ClassTranscribeServer.Controllers
             {
                 return Unauthorized(new { Reason = "Insufficient Permission", AccessType = offering.AccessType });
             }
-            var temp = await _context.Playlists
+            var temp = await _context.Playlists.AsNoTracking()
                 .Where(p => p.OfferingId == offeringId)
                 .OrderBy(p => p.Index)
                 .ThenBy(p => p.CreatedAt).ToListAsync();
@@ -83,7 +83,7 @@ namespace ClassTranscribeServer.Controllers
             {
                 return Unauthorized(new { Reason = "Insufficient Permission", AccessType = offering.AccessType });
             }
-            var temp = await _context.Playlists
+            var temp = await _context.Playlists.AsNoTracking()
                 .Where(p => p.OfferingId == offeringId)
                 .OrderBy(p => p.Index)
                 .ThenBy(p => p.CreatedAt).ToListAsync();
@@ -125,7 +125,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet("SearchForMedia/{offeringId}/{query}")]
         public async Task<ActionResult<IEnumerable<MediaSearchDTO>>> SearchForMedia(string offeringId, string query)
         {
-            var mediaSearches = await _context.Medias.Where(m => m.Playlist.OfferingId == offeringId &&
+            var mediaSearches = await _context.Medias.AsNoTracking().Where(m => m.Playlist.OfferingId == offeringId &&
             EF.Functions.ToTsVector("english", m.Name).Matches(query))
                 .Select(m => new MediaSearchDTO { Name = m.Name, MediaId = m.Id, PlaylistName = m.Playlist.Name, PlaylistId = m.PlaylistId })
                 .Take(50)
@@ -354,7 +354,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool PlaylistExists(string id)
         {
-            return _context.Playlists.Any(e => e.Id == id);
+            return _context.Playlists.AsNoTracking().Any(e => e.Id == id);
         }
     }
 

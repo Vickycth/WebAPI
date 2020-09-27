@@ -22,7 +22,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet("ByUniversity/{universityId}")]
         public async Task<ActionResult<IEnumerable<Term>>> GetTerms(string universityId)
         {
-            return await _context.Terms.Where(t => t.UniversityId == universityId).OrderBy(t => t.StartDate).ToListAsync();
+            return await _context.Terms.AsNoTracking().Where(t => t.UniversityId == universityId).OrderBy(t => t.StartDate).ToListAsync();
         }
 
         // GET: api/Terms/5
@@ -100,7 +100,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool TermExists(string id)
         {
-            return _context.Terms.Any(e => e.Id == id);
+            return _context.Terms.AsNoTracking().Any(e => e.Id == id);
         }
     }
 }

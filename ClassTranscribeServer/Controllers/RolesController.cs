@@ -54,7 +54,7 @@ namespace ClassTranscribeServer.Controllers
             return Ok();
         }
 
-        // POST: api/Roles
+        
         [HttpGet]
         [Authorize(Roles = Globals.ROLE_ADMIN)]
         public List<ApplicationUser> GetInstructors(string universityId)

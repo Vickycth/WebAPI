@@ -98,7 +98,7 @@ namespace ClassTranscribeServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EPub>>> GetEPubs()
         {
-            return await _context.EPubs.ToListAsync();
+            return await _context.EPubs.AsNoTracking().ToListAsync();
         }
 
         // GET: api/EPubs/5
@@ -177,7 +177,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool EPubExists(string id)
         {
-            return _context.EPubs.Any(e => e.Id == id);
+            return _context.EPubs.AsNoTracking().Any(e => e.Id == id);
         }
     }
 }

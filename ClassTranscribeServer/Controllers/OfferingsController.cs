@@ -36,7 +36,7 @@ namespace ClassTranscribeServer.Controllers
         public async Task<ActionResult<IEnumerable<OfferingDTO>>> GetOfferingsByStudent()
         {
             // Store the results
-            List<Offering> offerings = await _context.Offerings.ToListAsync();
+            List<Offering> offerings = await _context.Offerings.AsNoTracking().ToListAsync();
 
 
             // Filter out offerings where there is no media items available.
@@ -255,7 +255,7 @@ namespace ClassTranscribeServer.Controllers
 
         private bool OfferingExists(string id)
         {
-            return _context.Offerings.Any(e => e.Id == id);
+            return _context.Offerings.AsNoTracking().Any(e => e.Id == id);
         }
 
         public class NewOfferingDTO
