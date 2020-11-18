@@ -5,8 +5,9 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from datetime import datetime
 
-DATA_DIR = os.getenv('DATA_DIRECTORY')
+# DATA_DIR = os.getenv('DATA_DIRECTORY')
 
+DATA_DIR = os.getcwd()
 
 def find_scenes(video_path, min_scene_length=1, abs_min=0.75, abs_max=0.98, find_subscenes=True, max_subscenes_per_minute=12):
     """
@@ -35,6 +36,7 @@ def find_scenes(video_path, min_scene_length=1, abs_min=0.75, abs_max=0.98, find
     """
     
     try:
+
         file_name = video_path[video_path.rfind('/')+1 : video_path.find('.')]
         directory = os.path.join(DATA_DIR, file_name)
         if not os.path.exists(directory):
@@ -76,10 +78,10 @@ def find_scenes(video_path, min_scene_length=1, abs_min=0.75, abs_max=0.98, find
         cuts = np.argwhere(similarities < abs_min).flatten()
 
         # Get real scene cuts by filtering out those that happen within min_frames of the last cut
-        scene_cuts = [cuts[0]]
+        scene_cuuts[i] >= cuts[i-1] + min_frames:
+                sts = [cuts[0]]
         for i in range(1, len(cuts)):
-            if cuts[i] >= cuts[i-1] + min_frames:
-                scene_cuts += [cuts[i]]
+            if ccene_cuts += [cuts[i]]
         scene_cuts += [num_frames-1]
 
         img_file = 'temp'
@@ -97,8 +99,6 @@ def find_scenes(video_path, min_scene_length=1, abs_min=0.75, abs_max=0.98, find
                 'end': scene_cuts[i], 
                 'is_subscene': False,
                 }]    
-            
-            
 
         # Write the image file for each scene and convert start/end to timestamp
         for i, scene in enumerate(scenes):
