@@ -19,25 +19,32 @@ namespace TaskEngine.Tasks
     //[SuppressMessage("Microsoft.Performance", "CA1812:MarkMembersAsStatic")] // This class is never directly instantiated
     class BuildElasticIndexTask : RabbitMQTask<string>
     {
-        private readonly ElasticClient _client;
+        private readonly ElasticClient? _client;
 
         public BuildElasticIndexTask(RabbitMQConnection rabbitMQ,
             ILogger<BuildElasticIndexTask> logger)
             : base(rabbitMQ, TaskType.BuildElasticIndex, logger)
         {
             var configuration = CTDbContext.GetConfigurations();
-
-            // initialize elastic client
-            var node = new Uri(configuration.GetValue<string>("ES_CONNECTION_ADDR"));
-            using (var settings = new ConnectionSettings(node))
-            {
-                //settings.DefaultIndex("classTranscribe");
-                _client = new ElasticClient(settings);
+            string? addr = configuration.GetValue<string>("ES_CONNECTION_ADDR");  
+            if (!string.IsNullOrEmpty(addr)) {
+                // initialize elastic client
+                var node = new Uri(addr);
+                using (var settings = new ConnectionSettings(node))
+                {
+                    //settings.DefaultIndex("classTranscribe");
+                    _client = new ElasticClient(settings);
+                }
             }
         }
         protected async override Task OnConsume(string example, TaskParameters taskParameters, ClientActiveTasks cleanup)
         {
             registerTask(cleanup, "BuildElasticIndexTask"); // may throw AlreadyInProgress exception
+            if (_client is null)
+            {
+                GetLogger().LogInformation("Elastic Client not configured - skipping task");
+                return;
+            }
             GetLogger().LogInformation("BuildElasticIndexTask Starting");
 
             using (var _context = CTDbContext.CreateDbContext())
